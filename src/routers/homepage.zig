@@ -1,25 +1,24 @@
 const std = @import("std");
 const zap = @import("zap");
-
-alloc: std.mem.Allocator = undefined,
-ep: zap.Endpoint = undefined,
+const router = @import("../controllers/Router.zig");
 
 pub const Self = @This();
 
-pub fn init(
-    a: std.mem.Allocator
-) Self {
-    return .{
-        .alloc = a,
-        .ep = zap.Endpoint.init(.{
-            .path = "/",
-            .get = get,
-        })
-    };
-}
+pub fn init() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .thread_safe = true
+    }){};
+    var methods = std.ArrayList(router.Method).init(gpa.allocator());
 
-pub fn endpoint(self: *Self) *zap.Endpoint {
-    return &self.ep;
+    try methods.append(router.Method{
+        .type = .Get,
+        .run = get
+    });
+
+    try router.register(.{
+        .path = "/",
+        .methods = methods.items,
+    });
 }
 
 fn get (e: *zap.Endpoint, request: zap.Request) void {

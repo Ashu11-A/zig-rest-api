@@ -1,38 +1,21 @@
 const std = @import("std");
 const zap = @import("zap");
 const Home = @import("routers/homepage.zig");
+const server = @import("controllers/Server.zig");
+const router = @import("controllers/Router.zig");
 
-fn on_request(request: zap.Request) void {
-    if (request.path) |the_path| {
-        std.debug.print("PATH: {s}\n", .{the_path});
-    }
-
-    if (request.query) |the_query| {
-        std.debug.print("QUERY: {s}\n", .{the_query});
-    }
-}
+var gpa = std.heap.GeneralPurposeAllocator(.{
+    .thread_safe = true
+}){};
+pub const allocator = gpa.allocator();
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{
-        .thread_safe = true,
-    }){};
-    const allocator = gpa.allocator();
-
     {
-        var listener = zap.Endpoint.Listener.init(allocator, .{
-            .port = 3000,
-            .log = true,
-            .max_clients = 1000,
-            .max_body_size = 10 * 1024 * 1024,
-            .public_folder = "/public",
-            .on_request = on_request,
-        });
-        defer listener.deinit();
+        var node = server.create(allocator, 3000);
 
-        var userWeb = Home.init(allocator);
-        try listener.register(userWeb.endpoint());
-
-        try listener.listen();
+        try Home.init();
+        try router.start(&node);
+        try node.listen();
 
         std.debug.print("Listening on http://0.0.0.0:3000\n", .{});
 
@@ -42,6 +25,7 @@ pub fn main() !void {
         });
     }
 
-    const hasLeaked = gpa.detectLeaks();
-    std.log.debug("Has leaked: {}\n", .{hasLeaked});
+    // show potential memory leaks when ZAP is shut down
+    // const has_leaked = gpa.detectLeaks();
+    // std.log.debug("Has leaked (Main): {}\n", .{has_leaked});
 }
