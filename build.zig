@@ -32,6 +32,12 @@ pub fn build(b: *std.Build) void {
 
     exe.root_module.addImport("zap", zap.module("zap"));
 
+    exe.addLibraryPath(.{ .cwd_relative = "/usr/local/lib/libmysqlclient.so" });
+    exe.addIncludePath(.{ .cwd_relative = "/usr/includes/mysql" });
+    // exe.linkSystemLibrary("mysqlclient");
+    // exe.linkSystemLibrary2("liblibmysqlclient", .{ .preferred_link_mode = .static });
+    exe.linkLibC();
+
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).

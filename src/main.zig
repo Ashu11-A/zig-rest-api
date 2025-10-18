@@ -3,11 +3,13 @@ const zap = @import("zap");
 const Home = @import("routers/homepage.zig");
 const server = @import("controllers/Server.zig");
 const router = @import("controllers/Router.zig");
+const client = @import("controllers//Mysql.zig");
 
 const port = 3000;
 pub fn main() !void {
     var node = server.create(port);
     defer node.deinit();
+    try client.main();
 
     try Home.init();
     try router.start(&node);
